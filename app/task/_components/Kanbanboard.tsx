@@ -17,18 +17,28 @@ export default function Kanbanboard() {
   const dispatch = useAppDispatch();
   const tasks = useAppSelector((state) => state.task.tasks);
   const columns = [
-    { id: 'todo', title: 'Todo', status: 'todo' },
-    { id: 'inprogress', title: 'InProgress', status: 'inprogress' },
-    { id: 'done', title: 'Done', status: 'done' },
+    { id: 'column-todo', title: 'Todo', status: 'column-todo' },
+    {
+      id: 'column-inprogress',
+      title: 'InProgress',
+      status: 'column-inprogress',
+    },
+    { id: 'column-done', title: 'Done', status: 'column-done' },
   ];
 
   function handleDragEnd(event: any) {
     const { source, target } = event.operation;
-    console.log(source, target);
+    if (!target) return;
+    console.log(source, target, '2222');
+
+    dispatch(moveTask({ id: source.id, status: target.id }));
+    setDragOverlayId(null);
   }
   function handleDragOver(event: any) {
     const { source, target } = event.operation;
-    dispatch(moveTask({ id: source.id, status: target.id }));
+    console.log(source, target);
+    if (source && target) {
+    }
   }
   function handleDragStart(event: any) {
     const { source } = event.operation;
@@ -40,10 +50,17 @@ export default function Kanbanboard() {
         mode={mode}
         open={open}
         editTask={editTask}
-        onClose={() => dispatch(setModalOpen(false))}
+        onClose={() => {
+          dispatch(setModalOpen(false));
+        }}
         onConfirm={(values) => {
           if (mode === 'edit') {
-            dispatch(updateTask({ ...(values as TaskType) }));
+            dispatch(
+              updateTask({
+                ...(values as TaskType),
+                id: editTask?.id as string,
+              }),
+            );
           } else {
             dispatch(addTask(values));
           }

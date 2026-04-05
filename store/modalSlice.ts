@@ -16,10 +16,12 @@ const modalSlice = createSlice({
   initialState,
   reducers: {
     setModalOpen: (state, action: PayloadAction<boolean>) => {
+      state.mode = 'create';
       state.open = action.payload;
     },
     setEditTask: (state, action: PayloadAction<TaskType>) => {
       state.mode = 'edit';
+      state.open = true;
       state.editTask = action.payload;
     },
   },

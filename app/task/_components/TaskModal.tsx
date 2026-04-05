@@ -32,13 +32,20 @@ export default function AddTaskModal({
   return (
     <Modal
       open={open}
-      onCancel={onClose}
+      onCancel={() => {
+        onClose();
+        form.resetFields();
+      }}
       title={mode === 'edit' ? 'Edit Task' : 'Add Task'}
-      onOk={() => form.submit()}
-      destroyOnHidden
+      onOk={() => {
+        onConfirm(form.getFieldsValue());
+        form.resetFields();
+      }}
+      destroyOnHidden={true}
       centered
     >
       <Form
+        preserve={false}
         name="task"
         form={form}
         onFinish={onConfirm}
@@ -65,9 +72,9 @@ export default function AddTaskModal({
         >
           <Select
             options={[
-              { label: 'Todo', value: 'todo' },
-              { label: 'InProgress', value: 'inprogress' },
-              { label: 'Done', value: 'done' },
+              { label: 'Todo', value: 'column-todo' },
+              { label: 'InProgress', value: 'column-inprogress' },
+              { label: 'Done', value: 'column-done' },
             ]}
           />
         </Form.Item>

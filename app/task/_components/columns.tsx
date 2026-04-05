@@ -1,8 +1,8 @@
 'use client';
+import { TaskStatus, TaskType } from '@/types/taskType';
 import { CollisionPriority } from '@dnd-kit/abstract';
 import { useDroppable } from '@dnd-kit/react';
 import TaskCard from './taskCard';
-import { TaskStatus, TaskType } from './taskTypes';
 export default function ColumnCmp({
   id,
   title,
@@ -17,20 +17,20 @@ export default function ColumnCmp({
   children?: TaskType[];
 }) {
   const statusBgColor = {
-    todo: 'bg-red-200',
-    inprogress: 'bg-yellow-200',
-    done: 'bg-green-200',
+    'column-todo': 'bg-red-200',
+    'column-inprogress': 'bg-yellow-200',
+    'column-done': 'bg-green-200',
   };
   const { isDropTarget, ref } = useDroppable({
-    id: id,
+    id: `${id}`,
     type: 'column',
-    accept: ['item', 'todo', 'inprogress', 'done'],
+    accept: ['item', 'column'],
     collisionPriority: CollisionPriority.Low,
   });
   return (
     <div
       ref={ref}
-      className={`w-[600px] bg-gray-100 rounded-2xl p-4 ${statusBgColor[status]} ${isDropTarget ? 'bg-blue-200' : ''}`}
+      className={`w-[600px] bg-gray-100 rounded-2xl p-4 ${statusBgColor[status as keyof typeof statusBgColor]} `}
     >
       <div className="text-center">{title}</div>
       <div className="mt-4">

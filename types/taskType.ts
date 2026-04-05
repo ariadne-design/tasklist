@@ -7,3 +7,5 @@ export interface TaskType {
   createTime: string;
   status: TaskStatus;
 }
+
+export type ColumnTasks = Record<TaskStatus, TaskType[]>;
