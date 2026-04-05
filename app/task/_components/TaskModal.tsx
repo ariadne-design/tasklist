@@ -1,11 +1,17 @@
 'use client';
 
-import { TaskStatus } from '@/types/taskType';
+import { TaskStatus, TaskType } from '@/types/taskType';
 import { Form, Input, Modal, Select } from 'antd';
 
-interface AddTaskModalProps {
+type editTaskType = Omit<TaskType, 'id' | 'createTime'>;
+
+interface TaskModalProps {
+  id?: number;
   open: boolean;
+  mode: 'create' | 'edit';
+  editTask?: editTaskType;
   onClose: () => void;
+  onConfirm: (values: FiedType) => void;
 }
 
 type FiedType = {
@@ -13,16 +19,31 @@ type FiedType = {
   description: string;
   status: TaskStatus;
 };
-export default function AddTaskModal({ open, onClose }: AddTaskModalProps) {
+export default function AddTaskModal({
+  mode,
+  editTask,
+  open,
+  onClose,
+  onConfirm,
+}: TaskModalProps) {
+  const [form] = Form.useForm<FiedType>();
+
+  const initialValues = mode === 'edit' ? editTask : undefined;
   return (
     <Modal
       open={open}
       onCancel={onClose}
-      title="Add Task"
+      title={mode === 'edit' ? 'Edit Task' : 'Add Task'}
+      onOk={() => form.submit()}
       destroyOnHidden
       centered
     >
-      <Form name="task">
+      <Form
+        name="task"
+        form={form}
+        onFinish={onConfirm}
+        initialValues={initialValues}
+      >
         <Form.Item<FiedType>
           label="task Title"
           name="title"
