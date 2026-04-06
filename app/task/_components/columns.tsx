@@ -42,7 +42,7 @@ export default function ColumnCmp({
             id={child.id}
             index={index}
             title={child.title}
-            status={child.id as TaskStatus}
+            status={child.status}
             description={child.description}
             createTime={child.createTime}
           />

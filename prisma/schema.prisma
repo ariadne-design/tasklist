@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Task {
+  id          String   @id @default(cuid())
+  title       String
+  status      String
+  /// 同一列内的排序，越小越靠前（可按需改为从 1 开始）
+  order       Int      @default(1)
+  description String   @default("")
+  createTime  DateTime @default(now()) @map("create_time")
+  columnId    ColumnType
+  @@map("tasks")
+}
+
+enum ColumnType{
+  column_todo
+  column_inprogress
+  column_done
+}

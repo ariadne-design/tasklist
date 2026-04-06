@@ -1,6 +1,6 @@
 import { ColumnTasks, TaskStatus, TaskType } from '@/types/taskType';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-
+import { createTaskAsync, getTasksAsync, updateTasksAsync } from './taskThunk';
 type acceptTaskType = Omit<TaskType, 'id' | 'createTime'>;
 
 const TASK_STATUSES: TaskStatus[] = [
@@ -16,6 +16,12 @@ const taskSlice = createSlice({
       'column-inprogress': [],
       'column-done': [],
     } as ColumnTasks,
+    loading: {
+      create: false,
+      get: false,
+      update: false,
+      delete: false,
+    },
   },
   reducers: {
     addTask: (state, action: PayloadAction<acceptTaskType>) => {
@@ -75,6 +81,39 @@ const taskSlice = createSlice({
       //   state.tasks[action.payload.status as TaskStatus].splice(index, 1);
       // }
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(createTaskAsync.pending, (state, action) => {
+      state.loading.create = true;
+    });
+    builder.addCase(createTaskAsync.fulfilled, (state, action) => {
+      state.loading.create = false;
+      // state.tasks = action.payload;
+    });
+    builder.addCase(createTaskAsync.rejected, (state, action) => {
+      state.loading.create = false;
+    });
+
+    builder.addCase(getTasksAsync.pending, (state, action) => {
+      state.loading.get = true;
+    });
+    builder.addCase(getTasksAsync.fulfilled, (state, action) => {
+      state.loading.get = false;
+      state.tasks = action.payload.data;
+    });
+    builder.addCase(getTasksAsync.rejected, (state, action) => {
+      state.loading.get = false;
+    });
+    builder.addCase(updateTasksAsync.pending, (state, action) => {
+      state.loading.update = true;
+    });
+    builder.addCase(updateTasksAsync.fulfilled, (state, action) => {
+      state.loading.update = false;
+      state.tasks = action.payload.data;
+    });
+    builder.addCase(updateTasksAsync.rejected, (state, action) => {
+      state.loading.update = false;
+    });
   },
 });
 

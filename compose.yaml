@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nextfront-postgres
+    restart: unless-stopped
+    # 主机 5433 → 容器 5432（避免与本机已在跑的 Postgres/其它容器抢 5432）
+    ports:
+      - '5433:5432'
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+      POSTGRES_DB: nextfront
+    volumes:
+      - nextfront_pgdata:/var/lib/postgresql/data
+
+volumes:
+  nextfront_pgdata:
