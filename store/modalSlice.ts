@@ -20,6 +20,7 @@ const modalSlice = createSlice({
       state.open = action.payload;
     },
     setEditTask: (state, action: PayloadAction<TaskType>) => {
+      console.log(action.payload, 'editTask');
       state.mode = 'edit';
       state.open = true;
       state.editTask = action.payload;

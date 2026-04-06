@@ -2,7 +2,7 @@
 import { useAppDispatch } from '@/store/hooks';
 import { setEditTask } from '@/store/modalSlice';
 import { deleteTask } from '@/store/taskSlice';
-import { TaskStatus, TaskType } from '@/types/taskType';
+import { TaskStatus } from '@/types/taskType';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { useSortable } from '@dnd-kit/react/sortable';
 import { Button, Card } from 'antd';
@@ -35,12 +35,11 @@ export default function TaskCard({
   return (
     <div className="m-2">
       <Card
-        className="w-full bg-gray-200 rounded-2xl p-4 "
+        className="w-full bg-gray-200 rounded-2xl p-4 cursor-grab"
         title={title}
         ref={ref}
-        style={style}
         extra={
-          status !== 'done' && (
+          column !== 'column-done' && (
             <div className="flex gap-2">
               <Button
                 icon={<EditOutlined />}
@@ -51,8 +50,8 @@ export default function TaskCard({
                       title,
                       description,
                       createTime,
-                      status,
-                    } as TaskType),
+                      status: column,
+                    }),
                   )
                 }
               >
@@ -68,7 +67,7 @@ export default function TaskCard({
           )
         }
       >
-        <div className="text-left">{description}</div>
+        <div className="text-left">Content:{description}</div>
         <div className="text-left">{createTime}</div>
       </Card>
     </div>

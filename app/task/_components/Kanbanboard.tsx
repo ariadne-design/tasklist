@@ -2,8 +2,9 @@
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setModalOpen } from '@/store/modalSlice';
 import { addTask, moveTask, updateTask } from '@/store/taskSlice';
-import { TaskStatus, TaskType } from '@/types/taskType';
+import { ColumnTasks, TaskStatus, TaskType } from '@/types/taskType';
 import { PlusOutlined } from '@ant-design/icons';
+import { move } from '@dnd-kit/helpers';
 import { DragDropProvider, DragOverlay } from '@dnd-kit/react';
 import { Button } from 'antd';
 import { useState } from 'react';
@@ -11,37 +12,53 @@ import TaskModal from './TaskModal';
 import ColumnCmp from './columns';
 import TaskCard from './taskCard';
 
+const TASK_STATUSES: TaskStatus[] = [
+  'column-todo',
+  'column-inprogress',
+  'column-done',
+];
+
+function findTaskInColumns(
+  columnTasks: ColumnTasks,
+  taskId: string,
+): { task: TaskType; column: TaskStatus; index: number } | null {
+  for (const col of TASK_STATUSES) {
+    const index = columnTasks[col].findIndex((t) => t.id === taskId);
+    if (index !== -1) {
+      return { task: columnTasks[col][index], column: col, index };
+    }
+  }
+  return null;
+}
+
 export default function Kanbanboard() {
   const [dragOverlayId, setDragOverlayId] = useState<string | null>(null);
   const { open, mode, editTask } = useAppSelector((state) => state.modal);
   const dispatch = useAppDispatch();
   const tasks = useAppSelector((state) => state.task.tasks);
   const columns = [
-    { id: 'column-todo', title: 'Todo', status: 'column-todo' },
+    { id: 'column-todo', title: 'Todo' },
     {
       id: 'column-inprogress',
       title: 'InProgress',
-      status: 'column-inprogress',
     },
-    { id: 'column-done', title: 'Done', status: 'column-done' },
+    { id: 'column-done', title: 'Done' },
   ];
 
   function handleDragEnd(event: any) {
     const { source, target } = event.operation;
     if (!target) return;
-    console.log(source, target, '2222');
 
-    dispatch(moveTask({ id: source.id, status: target.id }));
-    setDragOverlayId(null);
+    // dispatch(moveTask({ id: source.id, status: target.id }));
+    // setDragOverlayId(null);
   }
   function handleDragOver(event: any) {
-    const { source, target } = event.operation;
-    console.log(source, target);
-    if (source && target) {
-    }
+    let newArr = move(tasks, event);
+    dispatch(moveTask(newArr));
   }
   function handleDragStart(event: any) {
     const { source } = event.operation;
+    console.log(source, 'source');
     setDragOverlayId(source.id);
   }
   return (
@@ -57,12 +74,12 @@ export default function Kanbanboard() {
           if (mode === 'edit') {
             dispatch(
               updateTask({
-                ...(values as TaskType),
+                ...(values as unknown as TaskType),
                 id: editTask?.id as string,
               }),
             );
           } else {
-            dispatch(addTask(values));
+            dispatch(addTask({ ...values }));
           }
           dispatch(setModalOpen(false));
         }}
@@ -74,7 +91,7 @@ export default function Kanbanboard() {
       >
         Add Task
       </Button>
-      <div className="w-full flex flex-row justify-around gap-4 p-4 min-h-[300px] max-h-[800px] overflow-y-auto">
+      <div className=" grid grid-cols-3 gap-4 h-full p-8">
         <DragDropProvider
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}
@@ -82,27 +99,25 @@ export default function Kanbanboard() {
         >
           {columns.map((column, columnIndex) => (
             <ColumnCmp
-              key={column.status}
+              key={column.id}
               index={columnIndex}
               id={column.id as TaskStatus}
               title={column.title}
-              status={column.status as TaskStatus}
             >
-              {tasks.filter((task) => task.status === column.status)}
+              {tasks[column.id as TaskStatus]}
             </ColumnCmp>
           ))}
           <DragOverlay>
             {dragOverlayId &&
               (() => {
-                const task = tasks.find((t) => t.id === dragOverlayId);
-                if (!task) return null;
-                const index = tasks
-                  .filter((t) => t.status === task.status)
-                  .findIndex((t) => t.id === task.id);
+                const found = findTaskInColumns(tasks, dragOverlayId);
+                if (!found) return null;
+                const { task, column, index } = found;
                 return (
                   <TaskCard
                     {...task}
-                    column={task.status}
+                    status={task.status}
+                    column={column}
                     index={index}
                   />
                 );

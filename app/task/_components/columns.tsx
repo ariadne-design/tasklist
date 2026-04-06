@@ -7,13 +7,11 @@ export default function ColumnCmp({
   id,
   title,
   index,
-  status,
   children,
 }: {
   id: TaskStatus;
   title: string;
   index: number;
-  status: TaskStatus;
   children?: TaskType[];
 }) {
   const statusBgColor = {
@@ -21,7 +19,7 @@ export default function ColumnCmp({
     'column-inprogress': 'bg-yellow-200',
     'column-done': 'bg-green-200',
   };
-  const { isDropTarget, ref } = useDroppable({
+  const { ref } = useDroppable({
     id: `${id}`,
     type: 'column',
     accept: ['item', 'column'],
@@ -30,18 +28,21 @@ export default function ColumnCmp({
   return (
     <div
       ref={ref}
-      className={`w-[600px] bg-gray-100 rounded-2xl p-4 ${statusBgColor[status as keyof typeof statusBgColor]} `}
+      className={` bg-gray-100 rounded-2xl p-4 ${statusBgColor[id as keyof typeof statusBgColor]} `}
     >
       <div className="text-center">{title}</div>
-      <div className="mt-4">
+      <div
+        className="mt-4 overflow-y-auto "
+        style={{ height: 'calc(100vh - 300px)' }}
+      >
         {children?.map((child, index) => (
           <TaskCard
+            column={id as TaskStatus}
             key={child.id}
             id={child.id}
             index={index}
-            column={status}
             title={child.title}
-            status={child.status}
+            status={child.id as TaskStatus}
             description={child.description}
             createTime={child.createTime}
           />
