@@ -23,7 +23,7 @@
 ### 1. 克隆并进入目录
 
 ```bash
-git clone <你的仓库地址> nextfront
+git clone <https://github.com/ariadne-design/tasklist.git> nextfront
 cd nextfront
 ```
 
