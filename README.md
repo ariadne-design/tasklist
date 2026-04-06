@@ -1,6 +1,8 @@
 # Task Management System
 
 基于 Next.js、Tailwind CSS、Ant Design 与 Redux Toolkit 的简单任务看板。
+实现功能有新增、跨列拖拽，使用Next集成了接口实现数据持久化
+编辑功能与删除功能未实现持久化
 
 ## 技术栈
 
@@ -85,11 +87,11 @@ docker compose down -v
 
 ## 其它脚本
 
-| 命令 | 说明 |
-|------|------|
-| `npm run build` | 生产构建 |
-| `npm run start` | 启动生产服务（需先 build） |
-| `npm run lint` | ESLint |
+| 命令                | 说明                         |
+| ------------------- | ---------------------------- |
+| `npm run build`     | 生产构建                     |
+| `npm run start`     | 启动生产服务（需先 build）   |
+| `npm run lint`      | ESLint                       |
 | `npx prisma studio` | 打开 Prisma 数据库可视化工具 |
 
 ---
