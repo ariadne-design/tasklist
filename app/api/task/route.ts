@@ -23,6 +23,28 @@ async function getColumnTasks(): Promise<ColumnTasks> {
   return result;
 }
 
+type ColumnKey = keyof typeof STATUS_TO_COLUMN;
+
+/** 仅查询指定列，用于 PATCH 后返回增量数据 */
+async function getColumnTasksPartial(
+  cols: ColumnKey[],
+): Promise<Partial<ColumnTasks>> {
+  if (cols.length === 0) return {};
+  const lists = await Promise.all(
+    cols.map((col) =>
+      prisma.task.findMany({
+        where: { status: col },
+        orderBy: { order: 'asc' },
+      }),
+    ),
+  );
+  const partial: Partial<ColumnTasks> = {};
+  cols.forEach((col, i) => {
+    partial[col] = lists[i] as TaskType[];
+  });
+  return partial;
+}
+
 export async function GET() {
   const data = await getColumnTasks();
   const response: { code: number; message: string; data: ColumnTasks } = {
@@ -34,18 +56,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  const b = body as Record<string, unknown>;
-  const title = typeof b.title === 'string' ? b.title.trim() : '';
-  const status = typeof b.status === 'string' ? b.status : '';
+  const b = (await request.json()) as {
+    title?: string;
+    status?: string;
+    description?: string;
+  };
+  const title = (b.title ?? '').trim();
+  const status = b.status ?? '';
   const columnId = STATUS_TO_COLUMN[status as keyof typeof STATUS_TO_COLUMN];
-  const description = typeof b.description === 'string' ? b.description : '';
+  const description = b.description ?? '';
 
   const { _max } = await prisma.task.aggregate({
     where: { columnId },
@@ -63,20 +82,10 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
-  }
-
-  type ColumnKey = keyof typeof STATUS_TO_COLUMN;
-  const { columns } = body as { columns?: ColumnTasks | Partial<ColumnTasks> };
-  if (!columns || typeof columns !== 'object') {
-    return NextResponse.json({ error: 'Invalid columns' }, { status: 400 });
-  }
-
-  const colKeys = (Object.keys(columns) as ColumnKey[]).filter(
+  const { columns = {} } = (await request.json()) as {
+    columns?: Partial<ColumnTasks>;
+  };
+  const colKeys = Object.keys(columns).filter(
     (k): k is ColumnKey => k in STATUS_TO_COLUMN,
   );
 
@@ -96,14 +105,7 @@ export async function PATCH(request: Request) {
     }),
   );
 
-  // const data = await getColumnTasks();
-  let data;
-  colKeys.forEach(async (col) => {
-    data = await prisma.task.findMany({
-      where: { status: col },
-      orderBy: { order: 'asc' },
-    });
-  });
+  const data = await getColumnTasksPartial(colKeys);
   return NextResponse.json(
     { code: 0, message: 'success', data },
     { status: 200 },
