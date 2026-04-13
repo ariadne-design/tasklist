@@ -6,6 +6,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <Provider store={store}>
       <div className="w-full h-screen">
+        asda
         <div>{children}</div>
       </div>
     </Provider>

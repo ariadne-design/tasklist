@@ -1,4 +1,7 @@
 import { ColumnTasks, TaskType } from '@/types/taskType';
+
+/** 完整三列或仅变更列（与 PATCH 约定一致） */
+export type ColumnTasksPatch = ColumnTasks | Partial<ColumnTasks>;
 import { createAsyncThunk } from '@reduxjs/toolkit';
 
 type acceptTaskType = Omit<TaskType, 'id' | 'createTime'>;
@@ -29,7 +32,7 @@ export const getTasksAsync = createAsyncThunk('task/getTasks', async () => {
 
 export const updateTasksAsync = createAsyncThunk(
   'task/updateTasks',
-  async (columns: ColumnTasks) => {
+  async (columns: ColumnTasksPatch) => {
     const response = await fetch('/api/task', {
       method: 'PATCH',
       headers: {

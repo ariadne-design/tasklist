@@ -3,6 +3,7 @@ import { store } from '@/store';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setModalOpen } from '@/store/modalSlice';
 import { moveTask, updateTask } from '@/store/taskSlice';
+import type { ColumnTasksPatch } from '@/store/taskThunk';
 import {
   createTaskAsync,
   getTasksAsync,
@@ -37,12 +38,31 @@ function findTaskInColumns(
   return null;
 }
 
+/** 与拖拽前快照对比，只返回顺序或成员有变化的列（同列排序 / 跨列各算变更列） */
+function getChangedColumnsOnly(
+  before: ColumnTasks,
+  after: ColumnTasks,
+): ColumnTasksPatch | null {
+  const partial: Partial<ColumnTasks> = {};
+  for (const col of TASK_STATUSES) {
+    const b = before[col];
+    const a = after[col];
+    const same = b.length === a.length && b.every((t, i) => t.id === a[i].id);
+    if (!same) {
+      partial[col] = a;
+    }
+  }
+  const keys = Object.keys(partial) as TaskStatus[];
+  return keys.length > 0 ? partial : null;
+}
+
 export default function Kanbanboard() {
   const [dragOverlayId, setDragOverlayId] = useState<string | null>(null);
   const tasksSnapshotRef = useRef<ColumnTasks | null>(null);
   const { open, mode, editTask } = useAppSelector((state) => state.modal);
   const dispatch = useAppDispatch();
   const tasks = useAppSelector((state) => state.task.tasks);
+
   useEffect(() => {
     dispatch(getTasksAsync());
   }, [dispatch]);
@@ -75,8 +95,15 @@ export default function Kanbanboard() {
       if (snap) dispatch(moveTask(snap));
       return;
     }
-    dispatch(updateTasksAsync(move(tasks, e)));
+    const next = move(tasks, e);
+    const baseline = snap ?? tasks;
+    //只提交有变化的列
+    const patch = getChangedColumnsOnly(baseline, next);
+    if (patch) {
+      dispatch(updateTasksAsync(patch));
+    }
   }
+
   /* eslint-enable @typescript-eslint/no-explicit-any */
   return (
     <div className="flex flex-col gap-4">

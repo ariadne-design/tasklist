@@ -10,7 +10,7 @@ const STATUS_TO_COLUMN = {
 
 async function getColumnTasks(): Promise<ColumnTasks> {
   const tasks = await prisma.task.findMany({
-    orderBy: { order: 'desc' },
+    orderBy: { order: 'asc' },
   });
   const result: ColumnTasks = {
     'column-todo': [],
@@ -40,22 +40,11 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-  if (!body || typeof body !== 'object') {
-    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-  }
 
   const b = body as Record<string, unknown>;
   const title = typeof b.title === 'string' ? b.title.trim() : '';
   const status = typeof b.status === 'string' ? b.status : '';
   const columnId = STATUS_TO_COLUMN[status as keyof typeof STATUS_TO_COLUMN];
-
-  if (!title || !columnId) {
-    return NextResponse.json(
-      { error: 'Invalid title or status' },
-      { status: 400 },
-    );
-  }
-
   const description = typeof b.description === 'string' ? b.description : '';
 
   const { _max } = await prisma.task.aggregate({
@@ -80,34 +69,41 @@ export async function PATCH(request: Request) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
   }
-  if (!body || typeof body !== 'object') {
-    return NextResponse.json({ error: 'Invalid body' }, { status: 400 });
-  }
 
   type ColumnKey = keyof typeof STATUS_TO_COLUMN;
-  const { columns } = body as { columns?: ColumnTasks };
-  if (!columns) {
+  const { columns } = body as { columns?: ColumnTasks | Partial<ColumnTasks> };
+  if (!columns || typeof columns !== 'object') {
     return NextResponse.json({ error: 'Invalid columns' }, { status: 400 });
   }
 
+  const colKeys = (Object.keys(columns) as ColumnKey[]).filter(
+    (k): k is ColumnKey => k in STATUS_TO_COLUMN,
+  );
+
   await prisma.$transaction(
-    (Object.keys(STATUS_TO_COLUMN) as ColumnKey[]).flatMap((col) => {
-      const list = columns[col];
-      const n = list.length;
+    colKeys.flatMap((col) => {
+      const list = columns[col] as TaskType[];
       return list.map((task, index) =>
         prisma.task.update({
           where: { id: task.id },
           data: {
             status: col,
             columnId: STATUS_TO_COLUMN[col],
-            order: n - 1 - index,
+            order: index,
           },
         }),
       );
     }),
   );
 
-  const data = await getColumnTasks();
+  // const data = await getColumnTasks();
+  let data;
+  colKeys.forEach(async (col) => {
+    data = await prisma.task.findMany({
+      where: { status: col },
+      orderBy: { order: 'asc' },
+    });
+  });
   return NextResponse.json(
     { code: 0, message: 'success', data },
     { status: 200 },

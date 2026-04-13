@@ -109,7 +109,10 @@ const taskSlice = createSlice({
     });
     builder.addCase(updateTasksAsync.fulfilled, (state, action) => {
       state.loading.update = false;
-      state.tasks = action.payload.data;
+      state.tasks = {
+        ...state.tasks,
+        ...action.payload.data,
+      };
     });
     builder.addCase(updateTasksAsync.rejected, (state, action) => {
       state.loading.update = false;
