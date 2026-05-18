@@ -67,6 +67,25 @@ const taskSlice = createSlice({
         ...action.payload,
       };
     },
+    Searchtask: (state, action: PayloadAction<string>) => {
+      const search = action.payload;
+
+      const filteredTasks = Object.values(state.tasks)
+        .flat()
+        .filter((task: any) => task.title.includes(search));
+      const filteredTasksObject = {
+        'column-todo': filteredTasks.filter(
+          (task: any) => task.status === 'column-todo',
+        ),
+        'column-inprogress': filteredTasks.filter(
+          (task: any) => task.status === 'column-inprogress',
+        ),
+        'column-done': filteredTasks.filter(
+          (task: any) => task.status === 'column-done',
+        ),
+      };
+      state.tasks = filteredTasksObject;
+    },
     deleteTask: (state, action: PayloadAction<string>) => {
       const id = action.payload;
       for (const col of TASK_STATUSES) {
@@ -120,5 +139,6 @@ const taskSlice = createSlice({
   },
 });
 
-export const { addTask, updateTask, moveTask, deleteTask } = taskSlice.actions;
+export const { addTask, updateTask, moveTask, deleteTask, Searchtask } =
+  taskSlice.actions;
 export default taskSlice.reducer;

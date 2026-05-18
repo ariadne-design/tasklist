@@ -2,7 +2,7 @@
 import { store } from '@/store';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setModalOpen } from '@/store/modalSlice';
-import { moveTask, updateTask } from '@/store/taskSlice';
+import { moveTask, Searchtask, updateTask } from '@/store/taskSlice';
 import type { ColumnTasksPatch } from '@/store/taskThunk';
 import {
   createTaskAsync,
@@ -60,6 +60,7 @@ export default function Kanbanboard() {
   const [dragOverlayId, setDragOverlayId] = useState<string | null>(null);
   const tasksSnapshotRef = useRef<ColumnTasks | null>(null);
   const { open, mode, editTask } = useAppSelector((state) => state.modal);
+  const [search, setSearch] = useState('');
   const dispatch = useAppDispatch();
   const tasks = useAppSelector((state) => state.task.tasks);
 
@@ -104,9 +105,24 @@ export default function Kanbanboard() {
     }
   }
 
+  useEffect(() => {
+    if (search) {
+      dispatch(Searchtask(search));
+    }
+  }, [search]);
   /* eslint-enable @typescript-eslint/no-explicit-any */
   return (
     <div className="flex flex-col gap-4">
+      {/* <Input
+        placeholder="Search"
+        onChange={(e) => {
+          if (!e.target.value) {
+            dispatch(getTasksAsync());
+          }
+          setSearch(e.target.value);
+        }}
+      /> */}
+
       <TaskModal
         mode={mode}
         open={open}
@@ -136,7 +152,7 @@ export default function Kanbanboard() {
       >
         Add Task
       </Button>
-      <div className=" grid grid-cols-3 gap-4 h-full p-8">
+      <div className=" flex flex-row justify-center items-center">
         <DragDropProvider
           onDragEnd={handleDragEnd}
           onDragOver={handleDragOver}
