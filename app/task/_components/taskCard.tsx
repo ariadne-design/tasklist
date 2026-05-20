@@ -7,6 +7,7 @@ import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { SortableKeyboardPlugin } from '@dnd-kit/dom/sortable';
 import { useSortable } from '@dnd-kit/react/sortable';
 import { Button, Card } from 'antd';
+import { memo } from 'react';
 
 export type TaskCardProps = {
   id: string;
@@ -93,7 +94,7 @@ function TaskCardSortable(props: TaskCardProps) {
   );
 }
 
-export default function TaskCard(props: TaskCardProps) {
+function TaskCard(props: TaskCardProps) {
   if (props.dragOverlay) {
     const { id, title, description, createTime, column } = props;
     return (
@@ -110,3 +111,5 @@ export default function TaskCard(props: TaskCardProps) {
   }
   return <TaskCardSortable {...props} />;
 }
+
+export default memo(TaskCard);

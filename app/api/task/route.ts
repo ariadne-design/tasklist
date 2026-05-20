@@ -1,12 +1,31 @@
 import { prisma } from '@/lib/prisma';
-import { ColumnTasks, TaskType } from '@/types/taskType';
+import { ColumnTasks, TaskStatus, TaskType } from '@/types/taskType';
+import { ColumnType, Prisma, Task } from '@prisma/client';
 import { NextResponse } from 'next/server';
 
-const STATUS_TO_COLUMN = {
-  'column-todo': 'column_todo',
-  'column-inprogress': 'column_inprogress',
-  'column-done': 'column_done',
+const STATUS_TO_COLUMN: Record<TaskStatus, ColumnType> = {
+  'column-todo': ColumnType.column_todo,
+  'column-inprogress': ColumnType.column_inprogress,
+  'column-done': ColumnType.column_done,
 };
+
+function isTaskStatus(value: string): value is TaskStatus {
+  return value in STATUS_TO_COLUMN;
+}
+
+function toTaskType(task: Task): TaskType {
+  const status = task.status;
+  if (!isTaskStatus(status)) {
+    throw new Error(`Invalid task status: ${status}`);
+  }
+  return {
+    id: task.id,
+    title: task.title,
+    status,
+    description: task.description,
+    createTime: task.createTime.toISOString(),
+  };
+}
 
 async function getColumnTasks(): Promise<ColumnTasks> {
   const tasks = await prisma.task.findMany({
@@ -17,8 +36,9 @@ async function getColumnTasks(): Promise<ColumnTasks> {
     'column-inprogress': [],
     'column-done': [],
   };
-  tasks.forEach((task: TaskType) => {
-    result[task.status as keyof ColumnTasks].push(task);
+  tasks.forEach((task) => {
+    const mapped = toTaskType(task);
+    result[mapped.status].push(mapped);
   });
   return result;
 }
@@ -40,7 +60,7 @@ async function getColumnTasksPartial(
   );
   const partial: Partial<ColumnTasks> = {};
   cols.forEach((col, i) => {
-    partial[col] = lists[i] as TaskType[];
+    partial[col] = lists[i].map(toTaskType);
   });
   return partial;
 }
@@ -63,16 +83,23 @@ export async function POST(request: Request) {
   };
   const title = (b.title ?? '').trim();
   const status = b.status ?? '';
-  const columnId = STATUS_TO_COLUMN[status as keyof typeof STATUS_TO_COLUMN];
+  if (!isTaskStatus(status)) {
+    return NextResponse.json(
+      { code: 1, message: '无效的列状态', data: null },
+      { status: 400 },
+    );
+  }
+  const columnId = STATUS_TO_COLUMN[status];
   const description = b.description ?? '';
 
   const { _max } = await prisma.task.aggregate({
     where: { columnId },
     _max: { order: true },
   });
-  const order = (_max.order ?? 0) + 1;
+  const maxOrder = _max?.order ?? new Prisma.Decimal(0);
+  const order = maxOrder.add(1);
 
-  const task = await prisma.task.create({
+  await prisma.task.create({
     data: { title, status, description, columnId, order },
   });
   return NextResponse.json(

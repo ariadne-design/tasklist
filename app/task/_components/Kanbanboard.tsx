@@ -1,5 +1,4 @@
 'use client';
-import { store } from '@/store';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { setModalOpen } from '@/store/modalSlice';
 import { moveTask, Searchtask, updateTask } from '@/store/taskSlice';
@@ -58,11 +57,15 @@ function getChangedColumnsOnly(
 
 export default function Kanbanboard() {
   const [dragOverlayId, setDragOverlayId] = useState<string | null>(null);
+  /** 拖拽过程中的列数据，不写 Redux，避免高频 dispatch */
+  const [dragTasks, setDragTasks] = useState<ColumnTasks | null>(null);
+  const dragTasksRef = useRef<ColumnTasks | null>(null);
   const tasksSnapshotRef = useRef<ColumnTasks | null>(null);
   const { open, mode, editTask } = useAppSelector((state) => state.modal);
   const [search, setSearch] = useState('');
   const dispatch = useAppDispatch();
-  const tasks = useAppSelector((state) => state.task.tasks);
+  const reduxTasks = useAppSelector((state) => state.task.tasks);
+  const displayTasks = dragTasks ?? reduxTasks;
 
   useEffect(() => {
     dispatch(getTasksAsync());
@@ -79,26 +82,34 @@ export default function Kanbanboard() {
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
   function handleDragStart(e: any) {
-    tasksSnapshotRef.current = store.getState().task.tasks;
+    tasksSnapshotRef.current = reduxTasks;
+    dragTasksRef.current = reduxTasks;
+    setDragTasks(reduxTasks);
     const id = e.operation.source?.id;
     setDragOverlayId(id != null ? String(id) : null);
   }
   function handleDragOver(e: any) {
-    const next = move(tasks, e);
-    if (next !== tasks) dispatch(moveTask(next));
+    const current = dragTasksRef.current;
+    if (!current) return;
+    const next = move(current, e);
+    if (next === current) return;
+    dragTasksRef.current = next;
+    setDragTasks(next);
   }
   function handleDragEnd(e: any) {
     setDragOverlayId(null);
-    //为了解决拖拽动画与 React 协调冲突导致 removeChild 报错
     const snap = tasksSnapshotRef.current;
     tasksSnapshotRef.current = null;
+    const current = dragTasksRef.current;
+    dragTasksRef.current = null;
+    setDragTasks(null);
+
     if (e.canceled || !e.operation.target) {
-      if (snap) dispatch(moveTask(snap));
       return;
     }
-    const next = move(tasks, e);
-    const baseline = snap ?? tasks;
-    //只提交有变化的列
+    const next = current ? move(current, e) : move(reduxTasks, e);
+    const baseline = snap ?? reduxTasks;
+    dispatch(moveTask(next));
     const patch = getChangedColumnsOnly(baseline, next);
     if (patch) {
       dispatch(updateTasksAsync(patch));
@@ -165,13 +176,13 @@ export default function Kanbanboard() {
               id={column.id as TaskStatus}
               title={column.title}
             >
-              {tasks[column.id as TaskStatus]}
+              {displayTasks[column.id as TaskStatus]}
             </ColumnCmp>
           ))}
           <DragOverlay>
             {dragOverlayId
               ? () => {
-                  const found = findTaskInColumns(tasks, dragOverlayId);
+                  const found = findTaskInColumns(displayTasks, dragOverlayId);
                   if (!found) return null;
                   const { task, column, index } = found;
                   return (

@@ -2,23 +2,23 @@
 import { TaskStatus, TaskType } from '@/types/taskType';
 import { CollisionPriority } from '@dnd-kit/abstract';
 import { useDroppable } from '@dnd-kit/react';
+import { memo } from 'react';
 import TaskCard from './taskCard';
-export default function ColumnCmp({
-  id,
-  title,
-  index,
-  children,
-}: {
+
+const statusBgColor: Record<TaskStatus, string> = {
+  'column-todo': 'bg-red-200',
+  'column-inprogress': 'bg-yellow-200',
+  'column-done': 'bg-green-200',
+};
+
+type ColumnCmpProps = {
   id: TaskStatus;
   title: string;
   index: number;
   children?: TaskType[];
-}) {
-  const statusBgColor = {
-    'column-todo': 'bg-red-200',
-    'column-inprogress': 'bg-yellow-200',
-    'column-done': 'bg-green-200',
-  };
+};
+
+function ColumnCmp({ id, title, index, children }: ColumnCmpProps) {
   const { ref } = useDroppable({
     id: `${id}`,
     type: 'column',
@@ -28,7 +28,7 @@ export default function ColumnCmp({
   return (
     <div
       ref={ref}
-      className={` bg-gray-100 rounded-2xl p-4 ${statusBgColor[id as keyof typeof statusBgColor]} `}
+      className={` bg-gray-100 rounded-2xl p-4 ${statusBgColor[id]} `}
     >
       <div className="text-center">{title}</div>
       <div
@@ -51,3 +51,5 @@ export default function ColumnCmp({
     </div>
   );
 }
+
+export default memo(ColumnCmp);
